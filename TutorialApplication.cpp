@@ -47,6 +47,8 @@ void TutorialApplication::createScene(void)
     // Create the walking list
     mWalkList.push_back(Ogre::Vector3(550.0f,  0.0f,  50.0f ));
     mWalkList.push_back(Ogre::Vector3(-100.0f,  0.0f, -200.0f));
+    mWalkList.push_back(Ogre::Vector3(400.0f,  0.0f, 200.0f));
+    mWalkList.push_back(Ogre::Vector3(-400.0f,  0.0f, 400.0f));
 
     // Create objects so we can see movement
     Ogre::Entity *ent;
@@ -67,6 +69,18 @@ void TutorialApplication::createScene(void)
     ent = mSceneMgr->createEntity("Knot3", "knot.mesh");
     node = mSceneMgr->getRootSceneNode()->createChildSceneNode("Knot3Node",
         Ogre::Vector3(-100.0f, -10.0f,-200.0f));
+    node->attachObject(ent);
+    node->setScale(0.1f, 0.1f, 0.1f);
+
+    ent = mSceneMgr->createEntity("Knot4", "knot.mesh");
+    node = mSceneMgr->getRootSceneNode()->createChildSceneNode("Knot4Node",
+        Ogre::Vector3(400.0f, -10.0f, 200.0f));
+    node->attachObject(ent);
+    node->setScale(0.1f, 0.1f, 0.1f);
+
+    ent = mSceneMgr->createEntity("Knot5", "knot.mesh");
+    node = mSceneMgr->getRootSceneNode()->createChildSceneNode("Knot5Node",
+        Ogre::Vector3(-400.0f, -10.0f, 400.0f));
     node->attachObject(ent);
     node->setScale(0.1f, 0.1f, 0.1f);
 
@@ -128,8 +142,8 @@ bool TutorialApplication::frameRenderingQueued(const Ogre::FrameEvent &evt){
             if (! nextLocation())
             {
                 // Set Idle animation
-                mAnimationState = mEntity->getAnimationState("Idle");
-                mAnimationState->setLoop(true);
+                mAnimationState = mEntity->getAnimationState("Die");
+                mAnimationState->setLoop(false);
                 mAnimationState->setEnabled(true);
             }
             else
