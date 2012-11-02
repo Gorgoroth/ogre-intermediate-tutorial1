@@ -29,7 +29,14 @@ TutorialApplication::~TutorialApplication(void)
 void TutorialApplication::createScene(void)
 {
     // Set the default lighting.
-    mSceneMgr->setAmbientLight(Ogre::ColourValue(0.5f, 0.5f, 0.5f));
+    mSceneMgr->setAmbientLight(Ogre::ColourValue(0.2f, 0.2f, 0.2f));
+
+    // Set up directional light
+    Ogre::Light* directionalLight = mSceneMgr->createLight("directionalLight");
+    directionalLight->setType(Ogre::Light::LT_DIRECTIONAL);
+    directionalLight->setDiffuseColour(Ogre::ColourValue(.5, .5, .5));
+    directionalLight->setSpecularColour(Ogre::ColourValue(.5, .5, .5));
+    directionalLight->setDirection(Ogre::Vector3( 0, -1, 1 ));
 
     // Create entity and scene node
     mEntity = mSceneMgr->createEntity("Robot", "robot.mesh");
@@ -72,15 +79,82 @@ void TutorialApplication::createScene(void)
 //-------------------------------------------------------------------------------------
 void TutorialApplication::createFrameListener(void){
 	BaseApplication::createFrameListener();
+	// Set idle animation
+    mAnimationState = mEntity->getAnimationState("Idle");
+    mAnimationState->setLoop(true);
+    mAnimationState->setEnabled(true);
+
+    // Set default values for variables
+     mWalkSpeed = 35.0f;
+     mDirection = Ogre::Vector3::ZERO;
 }
 
 //-------------------------------------------------------------------------------------
 bool TutorialApplication::nextLocation(void){
+    if (mWalkList.empty())
+             return false;
+
+    mDestination = mWalkList.front();  // this gets the front of the deque
+    mWalkList.pop_front();             // this removes the front of the deque
+
+    mDirection = mDestination - mNode->getPosition();
+    mDistance = mDirection.normalise();
+
 	return true;
 }
 
 //-------------------------------------------------------------------------------------
 bool TutorialApplication::frameRenderingQueued(const Ogre::FrameEvent &evt){
+
+    if (mDirection == Ogre::Vector3::ZERO)
+    {
+        if (nextLocation())
+        {
+            // Set walking animation
+            mAnimationState = mEntity->getAnimationState("Walk");
+            mAnimationState->setLoop(true);
+            mAnimationState->setEnabled(true);
+        }
+    }
+    else
+    {
+        Ogre::Real move = mWalkSpeed * evt.timeSinceLastFrame;
+        mDistance -= move;
+        if (mDistance <= 0.0f)
+        {
+            mNode->setPosition(mDestination);
+            mDirection = Ogre::Vector3::ZERO;
+            // Set animation based on if the robot has another point to walk to.
+            if (! nextLocation())
+            {
+                // Set Idle animation
+                mAnimationState = mEntity->getAnimationState("Idle");
+                mAnimationState->setLoop(true);
+                mAnimationState->setEnabled(true);
+            }
+            else
+            {
+                // Rotation Code will go here later
+                Ogre::Vector3 src = mNode->getOrientation() * Ogre::Vector3::UNIT_X;
+                if ((1.0f + src.dotProduct(mDirection)) < 0.0001f)
+                {
+                    mNode->yaw(Ogre::Degree(180)); // A rotate of 180° will create a divide by zero error, handle the edge case here
+                }
+                else
+                {
+                    Ogre::Quaternion quat = src.getRotationTo(mDirection);
+                    mNode->rotate(quat);
+                }
+            }
+        }
+        else
+        {
+            mNode->translate(mDirection * move);
+        } // else
+    }
+
+
+    mAnimationState->addTime(evt.timeSinceLastFrame);
 	return BaseApplication::frameRenderingQueued(evt);
 }
 
